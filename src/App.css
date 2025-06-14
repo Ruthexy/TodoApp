@@ -1,1 +1,48 @@
-@import "tailwindcss";
+/* @import "tailwindcss"; */
+
+/* App.css */
+
+
+.home-container {
+  min-height: 100vh;
+  background: linear-gradient(to right, #f8fafc, #e0f2fe); /* Light blue gradient */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 3rem;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.home-title {
+  font-size: 3rem;
+  color: #1e3a8a; /* Dark Blue */
+  font-weight: bold;
+  margin-bottom: 1rem;
+  text-shadow: 1px 1px 2px rgba(30, 58, 138, 0.3);
+}
+
+.home-description {
+  font-size: 1.25rem;
+  color: #334155; /* Cool Gray */
+  margin-bottom: 2rem;
+  max-width: 600px;
+  text-align: center;
+}
+
+.home-link {
+  background-color: #22c55e; /* Green */
+  color: #ffffff;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 10px;
+  text-decoration: none;
+  box-shadow: 0 4px 8px rgba(34, 197, 94, 0.3);
+  transition: background-color 0.3s ease, transform 0.2s;
+}
+
+.home-link:hover {
+  background-color: #16a34a; /* Darker Green */
+  transform: scale(1.05);
+}
