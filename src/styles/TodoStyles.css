@@ -1,0 +1,173 @@
+/* TodoStyles.css */
+
+body {
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+  background: linear-gradient(to bottom right, #f0f4ff, #e8ffe4, #f7f7f7);
+}
+
+/* Common container */
+.todo-container {
+  max-width: 800px;
+  margin: 2rem auto;
+  padding: 1.5rem;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* Header */
+.todo-header {
+  text-align: center;
+  font-size: 2rem;
+  color: #5b21b6;
+  margin-bottom: 1.5rem;
+}
+
+/* Inputs */
+.todo-search,
+.todo-input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  margin-bottom: 1rem;
+  border-radius: 5px;
+}
+
+/* Filter radio */
+.todo-filters {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.todo-filters label {
+  font-size: 0.9rem;
+  color: #333;
+}
+
+/* Todo list */
+.todo-list {
+  list-style: none;
+  padding: 0;
+}
+
+.todo-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.8rem;
+  border: 1px solid #e0e0e0;
+  margin-bottom: 8px;
+  border-radius: 5px;
+  transition: background 0.3s;
+}
+
+.todo-item:hover {
+  background-color: #f9f9f9;
+}
+
+.todo-title {
+  flex-grow: 1;
+  margin-right: 10px;
+}
+
+/* .todo-completed {
+  text-decoration: line-through;
+  color: red;
+} */
+
+.todo-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.todo-button {
+  padding: 5px 10px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.todo-create-form {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.todo-add {
+  background-color: #4caf50;
+  color: white;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 5px;
+}
+
+.todo-add:hover {
+  background-color: #45a049;
+}
+
+
+.todo-delete {
+  background-color: #ef4444;
+  color: white;
+}
+
+.todo-edit {
+  background-color: #7c3aed;
+  color: white;
+}
+
+.todo-checkbox {
+  margin-right: 10px;
+}
+
+/* Pagination */
+.pagination {
+  margin-top: 20px;
+  text-align: center;
+}
+
+.pagination button {
+  padding: 6px 12px;
+  margin: 0 3px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: white;
+  cursor: pointer;
+}
+
+.pagination button.active {
+  background-color: #7c3aed;
+  color: white;
+}
+
+/* Detail page */
+.todo-detail-title {
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: #7c3aed;
+}
+
+.todo-detail-label {
+  font-weight: 600;
+  color: #4b5563;
+}
+
+.todo-detail-value {
+  margin-bottom: 0.8rem;
+}
+
+.todo-back {
+  background-color: #6366f1;
+  color: white;
+}
+
+.todo-save {
+  background-color: #10b981;
+  color: white;
+}
+
+.todo-cancel {
+  background-color: #9ca3af;
+  color: white;
+}

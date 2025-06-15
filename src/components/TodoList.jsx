@@ -1,53 +1,37 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import axios from 'axios';
+import { fetchTodos, updateTodo, deleteTodo, createTodo } from '../api/todos';
 import Pagination from './Pagination';
-
-const fetchTodos = async (page) => {
-  const res = await axios.get(`https://jsonplaceholder.typicode.com/todos?_limit=10&_page=${page}`);
-  return res.data;
-};
+import { Link } from 'react-router-dom';
+import '../styles/TodoStyles.css';
 
 const TodoList = () => {
   const [page, setPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [showForm, setShowForm] = useState(false);
-  const [newTitle, setNewTitle] = useState('');
-  const [newCompleted, setNewCompleted] = useState(false);
+  const [newTodoTitle, setNewTodoTitle] = useState('');
   const queryClient = useQueryClient();
 
-  const { data: todos = [], isLoading, error } = useQuery({
+  const { data: todos = [], isLoading } = useQuery({
     queryKey: ['todos', page],
     queryFn: () => fetchTodos(page),
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => axios.delete(`https://jsonplaceholder.typicode.com/todos/${id}`),
-    onSuccess: () => {
-      queryClient.invalidateQueries(['todos', page]);
-    },
+    mutationFn: deleteTodo,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['todos'] }),
   });
 
-  const toggleMutation = useMutation({
-    mutationFn: (todo) =>
-      axios.put(`https://jsonplaceholder.typicode.com/todos/${todo.id}`, {
-        ...todo,
-        completed: !todo.completed,
-      }),
-    onSuccess: () => {
-      queryClient.invalidateQueries(['todos', page]);
-    },
+  const updateMutation = useMutation({
+    mutationFn: updateTodo,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['todos'] }),
   });
 
   const createMutation = useMutation({
-    mutationFn: (newTodo) =>
-      axios.post('https://jsonplaceholder.typicode.com/todos', newTodo),
+    mutationFn: createTodo,
     onSuccess: () => {
-      queryClient.invalidateQueries(['todos', page]);
-      setShowForm(false);
-      setNewTitle('');
-      setNewCompleted(false);
+      queryClient.invalidateQueries({ queryKey: ['todos'] });
+      setNewTodoTitle('');
     },
   });
 
@@ -65,99 +49,81 @@ const TodoList = () => {
 
   const handleCreate = (e) => {
     e.preventDefault();
-    if (!newTitle.trim()) return;
-    createMutation.mutate({ title: newTitle, completed: newCompleted, userId: 1 });
+    if (!newTodoTitle.trim()) return;
+    createMutation.mutate({
+      title: newTodoTitle,
+      completed: false,
+      userId: 1,
+    });
   };
 
-  if (isLoading) return <div className="text-center mt-10 text-gray-600">Loading...</div>;
-  if (error) return <div className="text-center mt-10 text-red-500">Error loading todos.</div>;
+  if (isLoading) return <div className="text-center">Loading...</div>;
 
   return (
-    <div className="max-w-3xl mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-6 text-center text-blue-600">Todo List</h1>
+    <div className="todo-container">
+      <h1 className="todo-header">Todo List</h1>
 
-      {/* Create Button */}
-      <div className="mb-4 flex justify-end">
-        <button
-          onClick={() => setShowForm(!showForm)}
-          className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
-        >
-          {showForm ? 'Cancel' : 'Create Todo'}
+      {/* Create Todo Form */}
+      <form onSubmit={handleCreate} className="todo-create-form">
+        <input
+          type="text"
+          placeholder="Add a new todo..."
+          value={newTodoTitle}
+          onChange={(e) => setNewTodoTitle(e.target.value)}
+          className="todo-input"
+        />
+        <button type="submit" className="todo-button todo-add">
+          {createMutation.isPending ? 'Adding...' : 'Add Todo'}
         </button>
-      </div>
+      </form>
 
-      {/* Create Form */}
-      {showForm && (
-        <form onSubmit={handleCreate} className="mb-6 p-4 border rounded bg-gray-50 space-y-4">
-          <input
-            type="text"
-            placeholder="New todo title"
-            value={newTitle}
-            onChange={(e) => setNewTitle(e.target.value)}
-            className="w-full p-2 border rounded"
-          />
-          <label className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              checked={newCompleted}
-              onChange={() => setNewCompleted(!newCompleted)}
-            />
-            <span>Mark as completed</span>
-          </label>
-          <button
-            type="submit"
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
-            Add Todo
-          </button>
-        </form>
-      )}
-
-      {/* Search Input */}
+      {/* Search */}
       <input
         type="text"
         placeholder="Search todos..."
         value={searchTerm}
         onChange={e => setSearchTerm(e.target.value)}
-        className="w-full p-2 border border-gray-300 rounded mb-4 focus:outline-none focus:ring-2 focus:ring-blue-400"
+        className="todo-search"
       />
 
-      {/* Status Filter */}
-      <div className="flex gap-4 mb-4">
+      {/* Filters */}
+      <div className="todo-filters">
         {['all', 'complete', 'incomplete'].map(status => (
-          <label key={status} className="flex items-center space-x-1 text-sm text-gray-700">
+          <label key={status}>
             <input
               type="radio"
               name="status"
               value={status}
               checked={statusFilter === status}
               onChange={() => setStatusFilter(status)}
-              className="accent-blue-500"
-            />
-            <span className="capitalize">{status}</span>
+            />{' '}
+            {status}
           </label>
         ))}
       </div>
 
       {/* Todo List */}
-      <ul className="space-y-2">
+      <ul className="todo-list">
         {filteredTodos.map(todo => (
-          <li
-            key={todo.id}
-            className="flex justify-between items-center p-3 bg-white rounded shadow hover:bg-gray-100 transition"
-          >
-            <div className="flex items-center gap-3 w-full">
-              <input
-                type="checkbox"
-                checked={todo.completed}
-                onChange={() => toggleMutation.mutate(todo)}
-              />
-              <span className={`flex-1 ${todo.completed ? 'line-through text-red-500' : ''}`}>
-                {todo.title}
-              </span>
+          <li key={todo.id} className="todo-item">
+            <input
+              type="checkbox"
+              className="todo-checkbox"
+              checked={todo.completed}
+              onChange={() =>
+                updateMutation.mutate({ ...todo, completed: !todo.completed })
+              }
+            />
+            <Link
+              to={`/todos/${todo.id}`}
+              className={`todo-title ${todo.completed ? 'todo-completed' : ''}`}
+            >
+              {todo.title}
+            </Link>
+            <div className="todo-actions">
               <button
+                className="todo-button todo-delete"
                 onClick={() => deleteMutation.mutate(todo.id)}
-                className="ml-2 px-2 py-1 text-sm bg-red-500 text-white rounded"
               >
                 Delete
               </button>
@@ -167,7 +133,7 @@ const TodoList = () => {
       </ul>
 
       {/* Pagination */}
-      <div className="mt-6">
+      <div className="pagination">
         <Pagination currentPage={page} onPageChange={setPage} />
       </div>
     </div>
