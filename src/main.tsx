@@ -1,0 +1,20 @@
+import ReactDOM from "react-dom/client";
+import App from "./App";
+import { StrictMode } from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+const queryClient = new QueryClient();
+
+const rootElement = document.getElementById("root");
+
+if (!rootElement) {
+  throw new Error("Root element not found");
+}
+
+ReactDOM.createRoot(rootElement as HTMLElement).render(
+  <StrictMode>
+    <QueryClientProvider client={queryClient}>
+        <App />
+    </QueryClientProvider>
+  </StrictMode>
+);
