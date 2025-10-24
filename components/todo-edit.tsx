@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { fetchTodoById, updateTodo } from '@/services/todoService';
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { fetchTodoById, updateTodo } from "@/services/todoService";
 
 type Todo = {
   id: string;
@@ -21,12 +21,12 @@ const TodoEdit: React.FC<TodoEditProps> = ({ id }) => {
   const router = useRouter();
   const queryClient = useQueryClient();
 
-  const [title, setTitle] = useState('');
+  const [title, setTitle] = useState("");
   const [completed, setCompleted] = useState(false);
 
   // ✅ Fetch Todo
   const { data: todo, isLoading } = useQuery<Todo>({
-    queryKey: ['todo', id],
+    queryKey: ["todo", id],
     queryFn: () => fetchTodoById(id),
     enabled: !!id,
   });
@@ -36,18 +36,22 @@ const TodoEdit: React.FC<TodoEditProps> = ({ id }) => {
     mutationFn: (updatedData: { title: string; completed: boolean }) =>
       updateTodo({ id, ...updatedData }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['todos'] });
-      queryClient.invalidateQueries({ queryKey: ['todo', id] });
-      router.push('/todos');
+      queryClient.invalidateQueries({ queryKey: ["todos"] });
+      queryClient.invalidateQueries({ queryKey: ["todo", id] });
+      router.push("/todos");
     },
   });
 
   // ✅ Initialize form state when todo loads
   useEffect(() => {
-    if (todo) {
-      setTitle(todo.title ?? '');
-      setCompleted(Boolean(todo.completed));
-    }
+    if (!todo) return;
+
+    const nextTitle = todo.title ?? "";
+    const nextCompleted = Boolean(todo.completed);
+
+    if (title !== nextTitle) setTitle(nextTitle);
+    if (completed !== nextCompleted) setCompleted(nextCompleted);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [todo]);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -56,7 +60,9 @@ const TodoEdit: React.FC<TodoEditProps> = ({ id }) => {
   };
 
   if (isLoading) {
-    return <div className="text-center py-8 text-gray-500">Loading todo...</div>;
+    return (
+      <div className="text-center py-8 text-gray-500">Loading todo...</div>
+    );
   }
 
   if (!todo) {
@@ -105,7 +111,7 @@ const TodoEdit: React.FC<TodoEditProps> = ({ id }) => {
             disabled={mutation.isPending}
             className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition disabled:bg-green-300"
           >
-            {mutation.isPending ? 'Saving...' : 'Save Changes'}
+            {mutation.isPending ? "Saving..." : "Save Changes"}
           </button>
         </div>
       </form>
