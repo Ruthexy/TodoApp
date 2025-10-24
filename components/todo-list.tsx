@@ -2,9 +2,10 @@
 
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { fetchTodos, updateTodo, deleteTodo, createTodo } from '@/services/todoService';
 import Link from 'next/link';
 import Pagination from './pagination';
+import { createTodo, deleteTodo, fetchTodos, updateTodo } from '@/services/todoService';
+import ConfirmModal from './confirm-modal';
 
 interface Todo {
   _id: string;
@@ -19,6 +20,9 @@ const TodoList = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [newTodoTitle, setNewTodoTitle] = useState('');
+
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const queryClient = useQueryClient();
 
   // ✅ Fetch Todos
@@ -34,12 +38,26 @@ const TodoList = () => {
     };
   }, [data]);
 
-
   // ✅ Delete Mutation
   const deleteMutation = useMutation({
-    mutationFn: deleteTodo,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['todos'] }),
+    mutationFn: (id: string) => deleteTodo(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['todos'] });
+      setIsModalOpen(false);
+      setSelectedId(null);
+    },
   });
+
+  const handleDeleteClick = (id: string) => {
+    setSelectedId(id);
+    setIsModalOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (selectedId) {
+      deleteMutation.mutate(selectedId);
+    }
+  };
 
   // ✅ Update Mutation
   const updateMutation = useMutation({
@@ -47,34 +65,37 @@ const TodoList = () => {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['todos'] }),
   });
 
-  // ✅ Create Mutation (with Optimistic Update)
+  // ✅ Create Mutation (Fixed Optimistic Update)
   const createMutation = useMutation({
-    mutationFn: createTodo,
-
-    // Optimistic UI Update
+    mutationFn: async (todo: { title: string; completed?: boolean }) => {
+      return await createTodo(todo);
+    },
     onMutate: async (newTodo) => {
       await queryClient.cancelQueries({ queryKey: ['todos', page] });
 
-      const previousTodos = queryClient.getQueryData<Todo[]>(['todos', page]) || [];
+      const previousData = queryClient.getQueryData<{ todos: Todo[]; totalPages: number }>(['todos', page]);
+      const previousTodos = previousData?.todos ?? [];
 
-      // Show new todo immediately in UI
-      queryClient.setQueryData(['todos', page], [
-        { ...newTodo, _id: `temp-${Date.now()}` },
-        ...previousTodos,
-      ]);
+      // Optimistically update cache
+      const optimisticTodo: Todo = {
+        _id: `temp-${Date.now()}`,
+        title: newTodo.title,
+        completed: newTodo.completed ?? false,
+      };
 
-      return { previousTodos };
+      queryClient.setQueryData(['todos', page], {
+        ...previousData,
+        todos: [optimisticTodo, ...previousTodos],
+      });
+
+      return { previousData };
     },
-
-    onError: (_err, _newTodo, context) => {
-      // Rollback if error occurs
-      if (context?.previousTodos) {
-        queryClient.setQueryData(['todos', page], context.previousTodos);
+    onError: (error, _, context) => {
+      if (context?.previousData) {
+        queryClient.setQueryData(['todos', page], context.previousData);
       }
     },
-
     onSettled: () => {
-      // Always refetch for data consistency
       queryClient.invalidateQueries({ queryKey: ['todos'] });
       setNewTodoTitle('');
     },
@@ -96,7 +117,11 @@ const TodoList = () => {
   // ✅ Create Handler
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newTodoTitle.trim()) return;
+
+    if (!newTodoTitle.trim()) {
+      return;
+    }
+
     createMutation.mutate({
       title: newTodoTitle,
       completed: false,
@@ -111,7 +136,6 @@ const TodoList = () => {
         Todo List
       </h1>
 
-      {/* Create Todo Form */}
       <form onSubmit={handleCreate} className="flex gap-2 mb-4">
         <input
           type="text"
@@ -128,7 +152,6 @@ const TodoList = () => {
         </button>
       </form>
 
-      {/* Search */}
       <input
         type="text"
         placeholder="Search todos..."
@@ -137,7 +160,6 @@ const TodoList = () => {
         className="w-full border border-gray-300 rounded-lg px-3 py-2 mb-4 focus:ring-2 focus:ring-blue-400 outline-none"
       />
 
-      {/* Filters */}
       <div className="flex gap-4 justify-center mb-6 text-gray-600">
         {['all', 'complete', 'incomplete'].map((status) => (
           <label key={status} className="capitalize cursor-pointer">
@@ -154,7 +176,6 @@ const TodoList = () => {
         ))}
       </div>
 
-      {/* Todo List */}
       <ul className="space-y-3">
         {filteredTodos.map((todo: Todo) => (
           <li
@@ -186,7 +207,7 @@ const TodoList = () => {
             </div>
             <button
               className="text-red-500 hover:text-red-700 font-medium"
-              onClick={() => deleteMutation.mutate(todo._id)}
+              onClick={() => handleDeleteClick(todo._id)}
             >
               Delete
             </button>
@@ -194,7 +215,6 @@ const TodoList = () => {
         ))}
       </ul>
 
-      {/* Pagination */}
       <div className="mt-6 flex justify-center">
         <Pagination
           currentPage={page}
@@ -202,6 +222,17 @@ const TodoList = () => {
           onPageChange={setPage}
         />
       </div>
+
+      <ConfirmModal
+        open={isModalOpen}
+        title="Delete Todo"
+        message="Are you sure you want to delete this task? This action cannot be undone."
+        confirmText="Yes, Delete"
+        cancelText="Cancel"
+        onCancel={() => setIsModalOpen(false)}
+        onConfirm={handleConfirmDelete}
+        loading={deleteMutation.isPending}
+      />
     </div>
   );
 };

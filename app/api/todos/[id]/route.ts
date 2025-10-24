@@ -8,6 +8,7 @@ export async function GET(
 ) {
   await connectDB();
   const { id } = await params;
+
   const todo = await Todo.findById(id);
 
   if (!todo) {
@@ -17,21 +18,24 @@ export async function GET(
   return NextResponse.json(todo);
 }
 
-export async function PUT(
-  req: Request,
-  { params }: { params: { id: string } }
-) {
+export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+
   await connectDB();
   const body = await req.json();
-  const updated = await Todo.findByIdAndUpdate(params.id, body, { new: true });
+
+  const updated = await Todo.findByIdAndUpdate(id, body, { new: true });
+
   return NextResponse.json(updated);
 }
 
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
+
   await connectDB();
-  await Todo.findByIdAndDelete(params.id);
+  await Todo.findByIdAndDelete(id);
   return NextResponse.json({ message: "Deleted successfully" });
 }
