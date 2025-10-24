@@ -1,12 +1,17 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import { Todo } from "@/models/Todo";
+import { getCurrentUser } from "@/lib/current-user";
 
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   await connectDB();
+
+  const user = await getCurrentUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const { id } = await params;
 
   const todo = await Todo.findById(id);
@@ -22,11 +27,19 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   const { id } = await params;
 
   await connectDB();
+
+  const user = await getCurrentUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const body = await req.json();
+  const todo = await Todo.findOneAndUpdate(
+    { _id: id, userId: user._id },
+    body,
+    { new: true }
+  );
 
-  const updated = await Todo.findByIdAndUpdate(id, body, { new: true });
-
-  return NextResponse.json(updated);
+  if (!todo) return NextResponse.json({ error: "Todo not found" }, { status: 404 });
+  return NextResponse.json(todo);
 }
 
 export async function DELETE(
@@ -36,6 +49,11 @@ export async function DELETE(
   const { id } = await params;
 
   await connectDB();
-  await Todo.findByIdAndDelete(id);
+  const user = await getCurrentUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const deleted = await Todo.findOneAndDelete({ _id: id, userId: user._id });
+  if (!deleted) return NextResponse.json({ error: "Todo not found" }, { status: 404 });
+
   return NextResponse.json({ message: "Deleted successfully" });
 }

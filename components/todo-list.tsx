@@ -6,6 +6,8 @@ import Link from 'next/link';
 import Pagination from './pagination';
 import { createTodo, deleteTodo, fetchTodos, updateTodo } from '@/services/todoService';
 import ConfirmModal from './confirm-modal';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 
 interface Todo {
   _id: string;
@@ -16,14 +18,21 @@ interface Todo {
 }
 
 const TodoList = () => {
+  const router = useRouter();
   const [page, setPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [newTodoTitle, setNewTodoTitle] = useState('');
+  const { status } = useSession();
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const queryClient = useQueryClient();
+
+  // Redirect if not authenticated
+  if (status === 'unauthenticated') {
+    router.push('/auth/login');
+  }
 
   // ✅ Fetch Todos
   const { data, isLoading } = useQuery({
